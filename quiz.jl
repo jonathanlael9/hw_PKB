@@ -1,11 +1,11 @@
-using Serialization
-using DataFrames
-using Statistics
-using LinearAlgebra
+#Nama : Jonathan Lael Aruan - 1313621006
+#Nama : Krisna Humanis - 1313621015
+
+using Serialization, DataFrames, Statistics, LinearAlgebra
 
 function split_data(data)
-    features = data[:, 1:end-1]  # Ambil kolom 1 hingga kolom ke-(akhir-1)
-    labels = data[:, end]       # Ambil kolom terakhir sebagai label
+    features = data[:, 1:end-1]
+    labels = data[:, end]   
     return features, labels
 end
 
@@ -17,7 +17,6 @@ function calculate_miu(features, labels)
     for (i, label) in enumerate(unique_labels)
         indices = findall(x -> x == label, labels)
         if isempty(indices)
-            # Handle the case where a class has no occurrences
             miu_data[i, :] .= mean(convert.(Float64, features), dims=1)[:]
         else
             miu_data[i, :] .= mean(convert.(Float64, features[indices, :]), dims=1)[:]
@@ -32,15 +31,16 @@ function split_miu_data(miu_data)
     return miu_columns
 end
 
-
 function predict_class(data, miu_columns)
     predicted_class = zeros(Int, size(data, 1))
+
     data_float16 = convert(Matrix{Float16}, data)
     for i in 1:size(data_float16, 1)
         distances = [norm(data_float16[i, :] .- miu) for miu in miu_columns]
         min_index = argmin(distances)
-        predicted_class[i] = min_index[1]  
+        predicted_class[i] = min_index[1]  # Indexing min_index to get the value, not CartesianIndex
     end
+
     return predicted_class
 end
 
@@ -64,12 +64,18 @@ function main()
     println("\nFeatures : ")
     display_first_few_rows(features)
 
+    println("\nLabels : ")
+    display_first_few_rows(labels)
+
     miu_data = calculate_miu(features, labels)
 
     println("\nMiu Data : ")
     display(DataFrame(miu_data, :auto))
 
     miu_columns_float16 = convert(Matrix{Float16}, miu_data)
+
+    data_parts = [data[:, [i, end]] for i in 1:4]
+
     accuracies = Float64[]
 
     for col in 1:size(features, 2)
